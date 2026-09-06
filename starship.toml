@@ -13,41 +13,33 @@ $c\
 $conda\
 $zig\
 $cmd_duration\
-\n$username\
-$character\
+\n$character\
 """
 
 add_newline = true
 command_timeout = 10
-palette = "paradise"
+palette = "kage"
 
 [fill]
 symbol = ' '
 
-[palettes.paradise]
-arrow = "#DCD7BA"
-os = "#C4B28A"
-directory = "#8BA4B0"
-git = "#C4746E"
-duration = "#957FB8"
-text_color = "#C5C9C5"
-text_light = "#2A2A37"
+[palettes.kage]
+arrow = "#ffe6b5"
+os = "#efd5a0"
+directory = "#a5c6e1"
+git = "#eca8a8"
+duration = "#e1bee9"
+text_color = "#ebebeb"
+text_light = "#2c3136"
 
 [character]
-success_symbol = "[ ](fg:green)"
-error_symbol = "[ ](fg:red)"
-
-[username]
-style_user = 'bold os'
-style_root = 'bold os_admin'
-format = '[](fg:blue) [$user](fg:#A988B0) '
-disabled = false
-show_always = true
+success_symbol = "[](fg:green)"
+error_symbol = "[](fg:red)"
 
 # Directory settings
 [directory]
-format = "[$path](bold $style)[$read_only]($read_only_style) "
-truncation_length = 2
+format = "[](fg:white)  [$path](bold $style)[$read_only]($read_only_style) "
+truncation_length = 4
 style = "fg:directory"
 read_only_style = "fg:directory"
 before_repo_root_style = "fg:directory"
