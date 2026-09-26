@@ -1,19 +1,13 @@
-import Quickshell // for PanelWindow
-import QtQuick // for Text
+import Quickshell
+import QtQuick
 
 PanelWindow {
   anchors {
     top: true
-    left: true
-    right: true
+    left: false
+    right: false
   }
 
   implicitHeight: 30
-
-  Text {
-    // center the bar in its parent component (the window)
-    anchors.centerIn: parent
-
-    text: "hello world"
-  }
+  implicitWidth: 230
 }
