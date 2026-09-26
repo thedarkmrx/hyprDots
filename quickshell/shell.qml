@@ -4,7 +4,7 @@
 
 import QtQuick
 import Quickshell
-import "modules/dynamicGlacier"
+import "modules/dynamic_island"
 
 ShellRoot {
     id: root
