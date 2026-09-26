@@ -2,7 +2,7 @@
 -- Hyprland 0.55+ Lua configuration
 
 hl.on("hyprland.start", function()
-	hl.exec_cmd("~/.config/waybar/monitor-waybar.sh")
+	hl.exec_cmd("quickshell")
 	hl.exec_cmd("hyprpaper")
 	hl.exec_cmd("dunst")
 	hl.exec_cmd("nm-applet")
