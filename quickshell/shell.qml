@@ -1,5 +1,6 @@
 import Quickshell
 import QtQuick
+import "modules/island_bar"
 
 PanelWindow {
   anchors {
