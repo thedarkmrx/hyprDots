@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import Quickshell.Widgets
 
 Item {
     id: root
@@ -67,9 +66,6 @@ Item {
     property bool btDiscovering: false
     property var btDevices: []
     property string btStatusText: ""
-    // The live Quickshell.Services.SystemTray model (SystemTray.items), passed
-    // straight through from the root so this view stays free of service imports.
-    property var trayItems: null
     property string timeText: ""
     property string dateText: ""
     property string fontFamily: "Noto Sans"
@@ -550,88 +546,6 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.appsSettingsRequested()
-                        }
-                    }
-
-                    // System tray — real app icons (Discord, network applet, etc.),
-                    // only visible while this peek panel is showing (i.e. on hover).
-                    Item {
-                        Layout.alignment: Qt.AlignRight
-                        Layout.preferredWidth: trayRow.width
-                        Layout.preferredHeight: trayRow.height
-                        visible: trayRepeater.count > 0
-
-                        Row {
-                            id: trayRow
-                            spacing: 7
-
-                            Repeater {
-                                id: trayRepeater
-
-                                model: root.trayItems
-
-                                delegate: Item {
-                                    id: trayIconDelegate
-
-                                    required property var modelData
-
-                                    width: 15
-                                    height: 15
-
-                                    IconImage {
-                                        anchors.fill: parent
-                                        source: trayIconDelegate.modelData ? trayIconDelegate.modelData.icon : ""
-                                        implicitSize: 15
-                                        asynchronous: true
-                                    }
-
-                                    MouseArea {
-                                        id: trayIconMouse
-
-                                        anchors.fill: parent
-                                        anchors.margins: -3
-                                        hoverEnabled: true
-                                        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: mouse => {
-                                            if (!trayIconDelegate.modelData)
-                                                return;
-                                            if (mouse.button === Qt.MiddleButton)
-                                                trayIconDelegate.modelData.secondaryActivate();
-                                            else
-                                                trayIconDelegate.modelData.activate();
-                                        }
-                                    }
-
-                                    // Tooltip with the app's name, shown only while hovered.
-                                    Rectangle {
-                                        readonly property string tooltipText: trayIconDelegate.modelData ? (trayIconDelegate.modelData.tooltipTitle || trayIconDelegate.modelData.title || "") : ""
-
-                                        anchors.bottom: parent.top
-                                        anchors.bottomMargin: 6
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        radius: 6
-                                        color: "#161616"
-                                        border.width: 1
-                                        border.color: "#2a2a2a"
-                                        width: trayTooltipText.implicitWidth + 14
-                                        height: trayTooltipText.implicitHeight + 8
-                                        z: 50
-                                        visible: trayIconMouse.containsMouse && tooltipText !== ""
-
-                                        Text {
-                                            id: trayTooltipText
-
-                                            anchors.centerIn: parent
-                                            text: parent.tooltipText
-                                            color: "#f0f0f0"
-                                            font.family: root.fontFamily
-                                            font.pixelSize: 10
-                                            font.weight: Font.DemiBold
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
                 }

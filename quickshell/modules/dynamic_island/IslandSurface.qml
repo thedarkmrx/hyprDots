@@ -101,8 +101,6 @@ Item {
     property var btDevices: []
     property string btStatusText: ""
 
-    property var trayItems: null
-
     property bool batteryAvailable: false
     property real batteryHealth: -1
     property int batteryCycles: -1
@@ -439,7 +437,6 @@ Item {
             btDiscovering: root.btDiscovering
             btDevices: root.btDevices
             btStatusText: root.btStatusText
-            trayItems: root.trayItems
             timeText: root.timeText
             dateText: root.dateText
             wifiRadioEnabled: root.wifiRadioEnabled
