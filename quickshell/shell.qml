@@ -1,14 +1,15 @@
-import Quickshell
+//@ pragma UseQApplication
+//@ pragma Env QS_NO_RELOAD_POPUP=1
+//@ pragma Env QT_QUICK_CONTROLS_STYLE=Basic
+
 import QtQuick
-import "modules/island_bar"
+import Quickshell
+import "modules/dynamicGlacier"
 
-PanelWindow {
-  anchors {
-    top: true
-    left: false
-    right: false
-  }
+ShellRoot {
+    id: root
 
-  implicitHeight: 30
-  implicitWidth: 230
+    DynamicGlacier {
+    }
+
 }
