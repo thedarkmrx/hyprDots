@@ -53,16 +53,20 @@ Row {
                 onClicked: mouse => {
                     switch (mouse.button) {
                     case Qt.LeftButton:
-                        trayChip.modelData.activate();
-                        break;
-                    case Qt.MiddleButton:
-                        trayChip.modelData.secondaryActivate();
-                        break;
-                    case Qt.RightButton:
+                        // "Opens" the item: most tray apps only really expose
+                        // this through their menu (many don't implement plain
+                        // activation at all), so show the menu when there is
+                        // one and fall back to the primary action otherwise.
                         if (trayChip.modelData.hasMenu && root.parentWindow) {
                             const scenePos = chipMouse.mapToItem(null, mouse.x, mouse.y);
                             trayChip.modelData.display(root.parentWindow, scenePos.x, scenePos.y);
+                        } else {
+                            trayChip.modelData.activate();
                         }
+                        break;
+                    case Qt.MiddleButton:
+                    case Qt.RightButton:
+                        trayChip.modelData.secondaryActivate();
                         break;
                     }
                 }
