@@ -87,9 +87,6 @@ Scope {
     property int demoStep: 0
     property bool trayBatteryDismissed: false
     property bool trayMediaDismissed: false
-    // Referencing SystemTray.items is what makes Quickshell start tracking the
-    // system tray in the first place, so this also doubles as the activation call.
-    readonly property var trayItems: SystemTray.items
 
     readonly property bool interactionOpen: root.mode === "idle" && (root.pointerInside || root.pinnedOpen || root.exitPreviewActive)
     readonly property bool trayVisible: root.handleStyle === "bump" && !root.interactionOpen && root.visualMode === "idle"
@@ -1948,10 +1945,19 @@ Scope {
         // Layer surfaces get no keyboard by default, so every TextInput in here
         // was inert: forceActiveFocus() moved Qt's internal focus (which is why
         // the field highlighted) but the compositor never routed a single key
-        // press to the surface. OnDemand hands us the keyboard while the pointer
-        // has clicked into the island and gives it straight back on click-away —
+        // press to the surface. OnDemand hands us the keyboard on demand —
         // Exclusive would hold it for as long as the bar is mapped, i.e. always.
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+        //
+        // Keeping OnDemand active at all times backfires on compositors with
+        // focus-follows-mouse: simply hovering the pointer over the island's
+        // input region is enough for the compositor to hand it keyboard focus,
+        // yanking focus away from whatever app (browser, game, terminal) had it.
+        // The only places that actually need real key input are the Wi-Fi
+        // password field and the apps search field, both of which only exist
+        // while their panel is deliberately opened by a click. So we only ask
+        // for keyboard focus in those two modes, and stay keyboard-less (None)
+        // the rest of the time — including idle, where hover expansion happens.
+        WlrLayershell.keyboardFocus: (root.mode === "wifi" || root.mode === "apps") ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         anchors {
             top: true
@@ -2077,7 +2083,6 @@ Scope {
                 appsSearchDraft: root.appsSearchDraft
                 appsStatusText: root.appsStatusText
                 appsFavoriteSlots: root.appsFavoriteSlots
-                trayItems: root.trayItems
                 onPreviousRequested: root.mediaPrevious()
                 onPlayPauseRequested: root.mediaTogglePlaying()
                 onNextRequested: root.mediaNext()
