@@ -1979,13 +1979,15 @@ Scope {
                 readonly property bool privacyVisible: root.privacyActive && !root.interactionOpen
                 readonly property bool trayLeftVisible: trayLeft.visible && trayLeft.opacity > 0
                 readonly property bool trayRightVisible: trayRight.visible && trayRight.opacity > 0
+                readonly property bool systemTrayVisible: systemTray.visible && systemTray.opacity > 0
                 readonly property real islandRightEdge: island.x + island.width
                 readonly property real islandBottomEdge: island.y + island.height
                 readonly property real privacyRightEdge: privacyVisible ? privacyIndicators.x + privacyIndicators.width : islandRightEdge
                 readonly property real privacyBottomEdge: privacyVisible ? privacyIndicators.y + privacyIndicators.height : islandBottomEdge
                 readonly property real trayLeftEdge: trayLeftVisible ? trayLeft.x : island.x
                 readonly property real trayRightEdge: trayRightVisible ? trayRight.x + trayRight.width : islandRightEdge
-                readonly property real leftEdge: Math.min(island.x, trayLeftEdge, privacyVisible ? privacyIndicators.x : island.x)
+                readonly property real systemTrayEdge: systemTrayVisible ? systemTray.x : island.x
+                readonly property real leftEdge: Math.min(island.x, trayLeftEdge, systemTrayEdge, privacyVisible ? privacyIndicators.x : island.x)
                 readonly property real rightEdge: Math.max(islandRightEdge, privacyRightEdge, trayRightEdge)
                 readonly property real bottomEdge: Math.max(islandBottomEdge, privacyBottomEdge)
 
@@ -2175,6 +2177,31 @@ Scope {
                     dismissed: root.trayMediaDismissed
                     onClicked: root.trayMediaDismissed = true
                 }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+
+            // Real system tray (Discord, Steam, etc — anything registering a
+            // StatusNotifierItem). Deliberately not gated by `root.trayVisible`
+            // like trayLeft/trayRight above: those are meant to hide the moment
+            // you hover the island, but a system tray that vanishes as soon as
+            // you try to reach it could never be clicked. It only hides once a
+            // panel actually takes over the island (wifi, apps, etc), where
+            // there's no room left to show it.
+            SystemTrayRow {
+                id: systemTray
+
+                parentWindow: islandWindow
+                z: 30
+                x: (trayLeft.visible && trayLeft.opacity > 0 ? trayLeft.x : island.x) - width - 8
+                y: island.y + Math.max(0, (island.height - height) / 2)
+                opacity: root.mode === "idle" ? 1 : 0
+                visible: opacity > 0 && width > 0
 
                 Behavior on opacity {
                     NumberAnimation {
