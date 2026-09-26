@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
+import Quickshell.Services.SystemTray
 import Quickshell.Services.UPower
 import Quickshell.Wayland
 
@@ -86,6 +87,9 @@ Scope {
     property int demoStep: 0
     property bool trayBatteryDismissed: false
     property bool trayMediaDismissed: false
+    // Referencing SystemTray.items is what makes Quickshell start tracking the
+    // system tray in the first place, so this also doubles as the activation call.
+    readonly property var trayItems: SystemTray.items
 
     readonly property bool interactionOpen: root.mode === "idle" && (root.pointerInside || root.pinnedOpen || root.exitPreviewActive)
     readonly property bool trayVisible: root.handleStyle === "bump" && !root.interactionOpen && root.visualMode === "idle"
@@ -2073,6 +2077,7 @@ Scope {
                 appsSearchDraft: root.appsSearchDraft
                 appsStatusText: root.appsStatusText
                 appsFavoriteSlots: root.appsFavoriteSlots
+                trayItems: root.trayItems
                 onPreviousRequested: root.mediaPrevious()
                 onPlayPauseRequested: root.mediaTogglePlaying()
                 onNextRequested: root.mediaNext()
