@@ -62,6 +62,8 @@ Item {
     property bool wifiConnected: false
     property string wifiSsid: ""
     property int wifiSignal: 0
+    property bool ethConnected: false
+    property string ethConnectionName: ""
     property bool btEnabled: false
     property bool btConnected: false
     property string btDeviceName: ""
@@ -194,7 +196,7 @@ Item {
     signal batteryCloseRequested
     signal batteryToggleThresholdRequested
     signal powerProfileRequested(string profile)
-    signal glacierSettingsRequested
+    signal islandSettingsRequested
     signal settingsCloseRequested
     signal liquidGlassRequested(bool enabled)
     signal idleWidthRequested(int width)
@@ -405,7 +407,7 @@ Item {
                 showBattery: true
                 onHandleStyleRequested: style => root.handleStyleRequested(style)
                 onBatteryRequested: root.batteryRequested()
-                onSettingsRequested: root.glacierSettingsRequested()
+                onSettingsRequested: root.islandSettingsRequested()
             }
 
             RowLayout {
@@ -452,6 +454,18 @@ Item {
                             id: wifiRow
                             spacing: 4
 
+                            // Ethernet docks right into the WiFi slot instead of
+                            // getting its own row — a cable is just another way
+                            // of being online, so it shows alongside (or, with
+                            // WiFi off, instead of) the WiFi icon.
+                            MIcon {
+                                name: "settings_ethernet"
+                                size: 13
+                                color: "#f0f0f0"
+                                visible: root.ethConnected
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
                             MIcon {
                                 name: root.wifiConnected ? (root.wifiSignal >= 70 ? "wifi" : root.wifiSignal >= 40 ? "wifi_2_bar" : "wifi_1_bar") : "wifi_off"
                                 size: 13
@@ -460,8 +474,8 @@ Item {
                             }
 
                             Text {
-                                text: root.wifiConnected ? root.wifiSsid : "Off"
-                                color: root.wifiConnected ? "#c8c8c8" : "#555555"
+                                text: root.wifiConnected ? root.wifiSsid : (root.ethConnected ? "Ethernet" : "Off")
+                                color: (root.wifiConnected || root.ethConnected) ? "#c8c8c8" : "#555555"
                                 font.family: root.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
@@ -702,7 +716,7 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.glacierSettingsRequested()
+                        onClicked: root.islandSettingsRequested()
                     }
                 }
 
@@ -1018,7 +1032,7 @@ Item {
         morph: root.btMorph
         maxPanelHeight: root.btMaxPanelHeight
         onCloseRequested: root.btCloseRequested()
-        onSettingsRequested: root.glacierSettingsRequested()
+        onSettingsRequested: root.islandSettingsRequested()
         onToggleRadioRequested: root.btToggleRadioRequested()
         onRefreshRequested: root.btRefreshRequested()
         onDeviceRequested: device => root.btDeviceRequested(device)
@@ -1055,7 +1069,7 @@ Item {
         fontFamily: root.fontFamily
         morph: root.batteryMorph
         onCloseRequested: root.batteryCloseRequested()
-        onSettingsRequested: root.glacierSettingsRequested()
+        onSettingsRequested: root.islandSettingsRequested()
         onToggleThresholdRequested: root.batteryToggleThresholdRequested()
         onPowerProfileRequested: profile => root.powerProfileRequested(profile)
     }
@@ -1173,7 +1187,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.glacierSettingsRequested()
+                            onClicked: root.islandSettingsRequested()
                         }
                     }
 
@@ -1758,7 +1772,7 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.glacierSettingsRequested()
+                onClicked: root.islandSettingsRequested()
             }
         }
 
@@ -1868,7 +1882,7 @@ Item {
                 showBattery: true
                 onHandleStyleRequested: style => root.handleStyleRequested(style)
                 onBatteryRequested: root.batteryRequested()
-                onSettingsRequested: root.glacierSettingsRequested()
+                onSettingsRequested: root.islandSettingsRequested()
             }
 
             RowLayout {
