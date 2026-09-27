@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import Quickshell.Widgets
 
 Item {
     id: root
@@ -11,6 +12,9 @@ Item {
     property string body: ""
     property string artist: ""
     property string artUrl: ""
+    property string notifyIcon: ""
+    property var notifications: []
+    property bool doNotDisturb: false
     property int volume: 0
     property bool muted: false
     property bool playing: false
@@ -108,6 +112,9 @@ Item {
     property real btMorph: 0
     property int btMaxPanelHeight: 420
     readonly property real btContentHeight: btContent.contentHeight
+    property real notificationsMorph: 0
+    property int notificationsMaxPanelHeight: 420
+    readonly property real notificationsContentHeight: notificationsContent.contentHeight
 
     property real batteryMorph: 0
     readonly property real batteryContentHeight: batteryContent.contentHeight
@@ -166,10 +173,10 @@ Item {
     readonly property int favoriteAppCount: root.favoriteAppIds.length
 
     // Only one panel morph is ever non-zero, so the peek can react to whichever is running.
-    readonly property real panelMorph: Math.max(root.wifiMorph, root.btMorph, root.batteryMorph, root.settingsMorph, root.appsMorph)
+    readonly property real panelMorph: Math.max(root.wifiMorph, root.btMorph, root.batteryMorph, root.settingsMorph, root.appsMorph, root.notificationsMorph)
 
     // The peek stays mounted through the morph so it can fade/shrink into the panel.
-    readonly property bool peekVisible: (root.mode === "idle" && root.forceExpanded) || root.mode === "wifi" || root.mode === "bluetooth" || root.mode === "battery" || root.mode === "settings" || root.mode === "apps"
+    readonly property bool peekVisible: (root.mode === "idle" && root.forceExpanded) || root.mode === "wifi" || root.mode === "bluetooth" || root.mode === "battery" || root.mode === "settings" || root.mode === "apps" || root.mode === "notifications"
     readonly property real peekMorphOpacity: 1 - Math.min(1, root.panelMorph / 0.45)
     readonly property real wifiPanelProgress: Math.max(0, Math.min(1, (root.wifiMorph - 0.22) / 0.78))
     readonly property real appsPanelProgress: Math.max(0, Math.min(1, (root.appsMorph - 0.22) / 0.78))
@@ -212,6 +219,11 @@ Item {
     signal btSettingsRequested
     signal seekRequested(real position)
     signal handleStyleRequested(string style)
+    signal notificationsSettingsRequested
+    signal notificationsCloseRequested
+    signal clearAllNotificationsRequested
+    signal clearNotificationRequested(var id)
+    signal toggleDoNotDisturbRequested
 
     function normalizedSeconds(value) {
         if (!isFinite(value) || value <= 0)
@@ -526,6 +538,58 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.btSettingsRequested()
+                        }
+                    }
+
+                    // Notifications
+                    Item {
+                        Layout.alignment: Qt.AlignRight
+                        Layout.preferredWidth: notifRow.width
+                        Layout.preferredHeight: notifRow.height
+
+                        Row {
+                            id: notifRow
+                            spacing: 4
+
+                            Item {
+                                width: 13
+                                height: 13
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                MIcon {
+                                    anchors.centerIn: parent
+                                    name: root.doNotDisturb ? "notifications_off" : "notifications"
+                                    size: 13
+                                    color: root.notifications.length > 0 && !root.doNotDisturb ? "#f0f0f0" : "#555555"
+                                }
+
+                                Rectangle {
+                                    width: 6
+                                    height: 6
+                                    radius: 3
+                                    color: "#ff5f5f"
+                                    anchors.top: parent.top
+                                    anchors.right: parent.right
+                                    visible: root.notifications.length > 0 && !root.doNotDisturb
+                                }
+                            }
+
+                            Text {
+                                text: root.doNotDisturb ? "Muted" : (root.notifications.length > 0 ? root.notifications.length + " new" : "None")
+                                color: root.notifications.length > 0 && !root.doNotDisturb ? "#c8c8c8" : "#555555"
+                                font.family: root.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.DemiBold
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.notificationsSettingsRequested()
                         }
                     }
 
@@ -1074,6 +1138,21 @@ Item {
         onToggleRadioRequested: root.btToggleRadioRequested()
         onRefreshRequested: root.btRefreshRequested()
         onDeviceRequested: device => root.btDeviceRequested(device)
+    }
+
+    NotificationsPanel {
+        id: notificationsContent
+
+        anchors.fill: parent
+        notifications: root.notifications
+        doNotDisturb: root.doNotDisturb
+        fontFamily: root.fontFamily
+        morph: root.notificationsMorph
+        maxPanelHeight: root.notificationsMaxPanelHeight
+        onCloseRequested: root.notificationsCloseRequested()
+        onClearAllRequested: root.clearAllNotificationsRequested()
+        onClearRequested: id => root.clearNotificationRequested(id)
+        onToggleDoNotDisturbRequested: root.toggleDoNotDisturbRequested()
     }
 
     BatteryPanel {
@@ -1744,6 +1823,14 @@ Item {
             border.width: 1
             border.color: "#202020"
 
+            IconImage {
+                anchors.centerIn: parent
+                implicitSize: 24
+                asynchronous: true
+                visible: root.notifyIcon !== ""
+                source: root.notifyIcon
+            }
+
             Text {
                 anchors.centerIn: parent
                 text: "!"
@@ -1751,6 +1838,7 @@ Item {
                 font.family: root.fontFamily
                 font.pixelSize: 22
                 font.bold: true
+                visible: root.notifyIcon === ""
             }
         }
 
