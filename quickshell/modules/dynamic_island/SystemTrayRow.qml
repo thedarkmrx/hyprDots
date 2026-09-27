@@ -52,7 +52,7 @@ Row {
                 acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                 onClicked: mouse => {
                     switch (mouse.button) {
-                    case Qt.LeftButton:
+                    case Qt.RightButton:
                         // "Opens" the item: most tray apps only really expose
                         // this through their menu (many don't implement plain
                         // activation at all), so show the menu when there is
@@ -65,7 +65,7 @@ Row {
                         }
                         break;
                     case Qt.MiddleButton:
-                    case Qt.RightButton:
+                    case Qt.LeftButton:
                         trayChip.modelData.secondaryActivate();
                         break;
                     }
