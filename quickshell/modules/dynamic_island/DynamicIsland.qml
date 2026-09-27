@@ -1469,7 +1469,7 @@ Scope {
             root.liquidGlassEnabled = parsed.liquidGlassEnabled === true;
             root.doNotDisturb = parsed.doNotDisturb === true;
             root.peekWidth = Math.max(300, Math.min(520, Math.round((Number(parsed.idleWidth) || 340) / 10) * 10));
-            root.peekHeight = Math.max(112, Math.min(180, Math.round((Number(parsed.idleHeight) || 132) / 4) * 4));
+            root.peekHeight = Math.max(112, Math.min(180, Math.round((Number(parsed.idleHeight) || 148) / 4) * 4));
         } catch (error) {
             // Keep the built-in defaults if the file is empty or hand-edited
             // into invalid JSON. The next UI change rewrites a valid file.

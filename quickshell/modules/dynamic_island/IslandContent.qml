@@ -34,7 +34,7 @@ Item {
     property string handleStyle: "bump"
     property bool liquidGlassEnabled: false
     property int idleWidth: 340
-    property int idleHeight: 132
+    property int idleHeight: 148
     // The actual PanelWindow the island is drawn in — needed so the tray
     // row's right-click menus position themselves correctly.
     property var trayParentWindow: null

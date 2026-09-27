@@ -34,7 +34,7 @@ Item {
     property string handleStyle: "bump"
     property bool liquidGlassEnabled: false
     property int idleWidth: 340
-    property int idleHeight: 132
+    property int idleHeight: 148
     property string batteryHoverText: ""
     property bool batteryCharging: false
     property int batteryLevel: 0
