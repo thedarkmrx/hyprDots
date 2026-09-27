@@ -38,6 +38,8 @@ Item {
     property bool wifiConnected: false
     property string wifiSsid: ""
     property int wifiSignal: 0
+    property bool ethConnected: false
+    property string ethConnectionName: ""
     property bool btEnabled: false
     property bool btConnected: false
     property string btDeviceName: ""
@@ -157,7 +159,7 @@ Item {
     signal batteryCloseRequested
     signal batteryToggleThresholdRequested
     signal powerProfileRequested(string profile)
-    signal glacierSettingsRequested
+    signal islandSettingsRequested
     signal settingsCloseRequested
     signal liquidGlassRequested(bool enabled)
     signal idleWidthRequested(int width)
@@ -434,6 +436,8 @@ Item {
             wifiConnected: root.wifiConnected
             wifiSsid: root.wifiSsid
             wifiSignal: root.wifiSignal
+            ethConnected: root.ethConnected
+            ethConnectionName: root.ethConnectionName
             btEnabled: root.btEnabled
             btConnected: root.btConnected
             btDeviceName: root.btDeviceName
@@ -478,7 +482,7 @@ Item {
             onBatteryCloseRequested: root.batteryCloseRequested()
             onBatteryToggleThresholdRequested: root.batteryToggleThresholdRequested()
             onPowerProfileRequested: profile => root.powerProfileRequested(profile)
-            onGlacierSettingsRequested: root.glacierSettingsRequested()
+            onIslandSettingsRequested: root.islandSettingsRequested()
             onSettingsCloseRequested: root.settingsCloseRequested()
             onLiquidGlassRequested: enabled => root.liquidGlassRequested(enabled)
             onIdleWidthRequested: width => root.idleWidthRequested(width)
