@@ -5,6 +5,7 @@ import Quickshell.Bluetooth
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Mpris
+import Quickshell.Services.Notifications
 import Quickshell.Services.Pipewire
 import Quickshell.Services.SystemTray
 import Quickshell.Services.UPower
@@ -117,6 +118,9 @@ Scope {
     readonly property int btWidth: 500
     readonly property int btMinHeight: 132
     readonly property int btMaxPanelHeight: 440
+    readonly property int notificationsWidth: 500
+    readonly property int notificationsMinHeight: 132
+    readonly property int notificationsMaxPanelHeight: 420
     readonly property int batteryWidth: 500
     readonly property int batteryMinHeight: 132
     readonly property int settingsWidth: 500
@@ -158,6 +162,14 @@ Scope {
     // just another way of being "online", not a separate concept)
     property bool ethConnected: false
     property string ethConnectionName: ""
+
+    // Notifications. History is our own plain-object list (newest first) —
+    // NotificationServer.trackedNotifications only holds what it's still
+    // "tracking" live, which isn't what a clearable history needs, so
+    // notifications are read once on arrival and copied out as plain data.
+    property var notificationHistory: []
+    property bool doNotDisturb: false
+    property string notifyIcon: ""
 
     // WiFi manager panel (morphs the island into mode "wifi")
     property bool wifiRadioEnabled: true
@@ -244,6 +256,8 @@ Scope {
             return root.wifiWidth;
         case "bluetooth":
             return root.btWidth;
+        case "notifications":
+            return root.notificationsWidth;
         case "battery":
             return root.batteryWidth;
         case "settings":
@@ -269,6 +283,8 @@ Scope {
             return root.wifiMinHeight;
         case "bluetooth":
             return root.btMinHeight;
+        case "notifications":
+            return root.notificationsMinHeight;
         case "battery":
             return root.batteryMinHeight;
         case "settings":
@@ -302,7 +318,7 @@ Scope {
     function scheduleInteractionClose() {
         // Detail panels are hover-owned even when the idle island was pinned.
         // Keeping the pinned state only applies to the compact idle peek.
-        if (root.mode === "wifi" || root.mode === "bluetooth" || root.mode === "battery" || root.mode === "settings" || root.mode === "apps" || !root.pinnedOpen)
+        if (root.mode === "wifi" || root.mode === "bluetooth" || root.mode === "battery" || root.mode === "settings" || root.mode === "apps" || root.mode === "notifications" || !root.pinnedOpen)
             hoverLeaveTimer.restart();
     }
 
@@ -439,11 +455,12 @@ Scope {
         root.saveVisualSettings();
     }
 
-    function showNotification(summary, message, app) {
+    function showNotification(summary, message, app, icon) {
         root.appName = app || "Notification";
         root.title = summary || "New notification";
         root.body = message || "";
         root.artUrl = "";
+        root.notifyIcon = icon || "";
         root.mode = "notify";
         root.hold(5200);
     }
@@ -1053,6 +1070,30 @@ Scope {
             root.btAdapter.discovering = true;
     }
 
+    function toggleNotificationsPanel() {
+        if (root.mode === "notifications") {
+            root.showIdle();
+            return;
+        }
+
+        collapseTimer.stop();
+        root.exitPreviewActive = false;
+        root.mode = "notifications";
+    }
+
+    function clearAllNotifications() {
+        root.notificationHistory = [];
+    }
+
+    function clearNotification(id) {
+        root.notificationHistory = root.notificationHistory.filter(entry => entry.id !== id);
+    }
+
+    function toggleDoNotDisturb() {
+        root.doNotDisturb = !root.doNotDisturb;
+        root.saveVisualSettings();
+    }
+
     function toggleBluetoothRadio() {
         if (!root.btAdapter) {
             root.btStatusText = "No Bluetooth adapter";
@@ -1426,6 +1467,7 @@ Scope {
 
             root.handleStyle = parsed.handleStyle === "strip" ? "strip" : "bump";
             root.liquidGlassEnabled = parsed.liquidGlassEnabled === true;
+            root.doNotDisturb = parsed.doNotDisturb === true;
             root.peekWidth = Math.max(300, Math.min(520, Math.round((Number(parsed.idleWidth) || 340) / 10) * 10));
             root.peekHeight = Math.max(112, Math.min(180, Math.round((Number(parsed.idleHeight) || 132) / 4) * 4));
         } catch (error) {
@@ -1443,6 +1485,7 @@ Scope {
         visualSettingsFile.setText(JSON.stringify({
             handleStyle: root.handleStyle,
             liquidGlassEnabled: root.liquidGlassEnabled,
+            doNotDisturb: root.doNotDisturb,
             idleWidth: root.peekWidth,
             idleHeight: root.peekHeight
         }, null, 2) + "\n");
@@ -1465,7 +1508,7 @@ Scope {
         onTriggered: {
             root.pointerInside = false;
 
-            if (root.exitPreviewActive || root.mode === "wifi" || root.mode === "bluetooth" || root.mode === "battery" || root.mode === "settings" || root.mode === "apps")
+            if (root.exitPreviewActive || root.mode === "wifi" || root.mode === "bluetooth" || root.mode === "battery" || root.mode === "settings" || root.mode === "apps" || root.mode === "notifications")
                 root.showIdle();
         }
     }
@@ -1871,6 +1914,35 @@ Scope {
         onTriggered: root.saveVisualSettings()
     }
 
+    NotificationServer {
+        id: notificationServer
+
+        bodySupported: true
+        actionsSupported: false
+        imageSupported: true
+        keepOnReload: false
+
+        onNotification: notification => {
+            const entry = {
+                id: notification.id,
+                appName: notification.appName || "Notification",
+                appIcon: notification.appIcon || "",
+                summary: notification.summary || "",
+                body: notification.body || "",
+                time: Date.now()
+            };
+
+            // Cap the history so it can't grow forever on a chatty machine.
+            root.notificationHistory = [entry, ...root.notificationHistory].slice(0, 50);
+
+            if (!root.doNotDisturb)
+                root.showNotification(entry.summary, entry.body, entry.appName, entry.appIcon);
+
+            // We only need a snapshot of the data above, not a live handle —
+            // leaving `tracked` false lets the server discard it right away.
+        }
+    }
+
     Process {
         id: wifiPollProc
 
@@ -1971,7 +2043,7 @@ Scope {
         // Tall enough for the tallest expanded panel so the morph never clips.
         // The surface is transparent and input is limited to `mask`, so the extra
         // room costs nothing.
-        implicitHeight: Math.max(root.windowHeight, root.wifiMaxPanelHeight + 32, root.btMaxPanelHeight + 32, root.settingsMinHeight + 180, root.appsMaxPanelHeight + 32)
+        implicitHeight: Math.max(root.windowHeight, root.wifiMaxPanelHeight + 32, root.btMaxPanelHeight + 32, root.settingsMinHeight + 180, root.appsMaxPanelHeight + 32, root.notificationsMaxPanelHeight + 32)
         visible: true
 
         // end-4 already enables compositor blur for `quickshell:*` surfaces.
@@ -2040,6 +2112,10 @@ Scope {
                 targetH: root.targetHeight()
                 wifiMaxPanelHeight: root.wifiMaxPanelHeight
                 btMaxPanelHeight: root.btMaxPanelHeight
+                notificationsMaxPanelHeight: root.notificationsMaxPanelHeight
+                notifications: root.notificationHistory
+                doNotDisturb: root.doNotDisturb
+                notifyIcon: root.notifyIcon
                 mode: root.visualMode
                 handleStyle: root.handleStyle
                 liquidGlassEnabled: root.liquidGlassEnabled
@@ -2163,6 +2239,11 @@ Scope {
                 onBtSettingsRequested: root.toggleBluetoothPanel()
                 onSeekRequested: position => root.mediaSeek(position)
                 onHandleStyleRequested: style => root.setHandleStyle(style)
+                onNotificationsSettingsRequested: root.toggleNotificationsPanel()
+                onNotificationsCloseRequested: root.closePanelToWideIdle(root.notificationsWidth)
+                onClearAllNotificationsRequested: root.clearAllNotifications()
+                onClearNotificationRequested: id => root.clearNotification(id)
+                onToggleDoNotDisturbRequested: root.toggleDoNotDisturb()
             }
 
             // Tray: left side (battery — only when charging, circular)
@@ -2316,7 +2397,7 @@ Scope {
                 width: island.width
                 height: root.mode === "idle" && !root.interactionOpen ? Math.max(root.reservedZone, island.height) : island.height
                 hoverEnabled: true
-                acceptedButtons: root.visualMode === "media" || root.visualMode === "wifi" || root.visualMode === "bluetooth" || root.visualMode === "battery" || root.visualMode === "settings" || root.visualMode === "apps" || root.interactionOpen ? Qt.NoButton : Qt.LeftButton
+                acceptedButtons: root.visualMode === "media" || root.visualMode === "wifi" || root.visualMode === "bluetooth" || root.visualMode === "battery" || root.visualMode === "settings" || root.visualMode === "apps" || root.visualMode === "notifications" || root.interactionOpen ? Qt.NoButton : Qt.LeftButton
                 cursorShape: Qt.PointingHandCursor
                 onEntered: root.keepInteractionOpen(true)
                 onPositionChanged: mouse => root.maybeFinishExitPreview(mouse.x, width)
@@ -2365,8 +2446,8 @@ Scope {
             root.debugCameraActive = false;
         }
 
-        function notify(summary: string, message: string, app: string): void {
-            root.showNotification(summary, message, app);
+        function notify(summary: string, message: string, app: string, icon: string): void {
+            root.showNotification(summary, message, app, icon);
         }
 
         function media(trackTitle: string, trackArtist: string, isPlaying: string, artUrl: string): void {
@@ -2395,6 +2476,15 @@ Scope {
 
         function battery(): void {
             root.toggleBatteryPanel();
+        }
+
+        function notifications(): void {
+            root.toggleNotificationsPanel();
+        }
+
+        function dnd(enabled: string): void {
+            root.doNotDisturb = root.boolFromIpc(enabled);
+            root.saveVisualSettings();
         }
 
         function settings(): void {
