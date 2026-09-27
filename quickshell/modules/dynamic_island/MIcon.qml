@@ -17,7 +17,7 @@ Text {
     property bool filled: false
 
     text: name
-    color: "#f5f5f5"
+    color: "#f5f1da"
     font.family: "Material Symbols Rounded"
     font.pixelSize: size
     font.weight: filled ? Font.Bold : Font.Medium
