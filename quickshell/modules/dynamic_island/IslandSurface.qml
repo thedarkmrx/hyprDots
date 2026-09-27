@@ -11,6 +11,9 @@ Item {
     property string body: ""
     property string artist: ""
     property string artUrl: ""
+    property string notifyIcon: ""
+    property var notifications: []
+    property bool doNotDisturb: false
     property int volume: 0
     property bool muted: false
     property string volumeKind: "audio"
@@ -58,6 +61,7 @@ Item {
     property int wifiMaxPanelHeight: 420
     property int btMaxPanelHeight: 420
     property int appsMaxPanelHeight: 470
+    property int notificationsMaxPanelHeight: 420
 
     // 0 = island, 1 = Wi-Fi manager. Animated by the morph transition and shared
     // with the content layer so shape and contents move as one.
@@ -77,6 +81,9 @@ Item {
     // non-zero, since the island can only be in one panel mode at a time.
     property real appsMorph: 0
     readonly property real appsPanelHeight: islandContent.appsContentHeight
+
+    property real notificationsMorph: 0
+    readonly property real notificationsPanelHeight: islandContent.notificationsContentHeight
 
     // 0 = island, 1 = volume HUD. Same mechanism as the two panels above, so the
     // pill grows out of the handle instead of being painted on top of it.
@@ -175,6 +182,11 @@ Item {
     signal btSettingsRequested
     signal seekRequested(real position)
     signal handleStyleRequested(string style)
+    signal notificationsSettingsRequested
+    signal notificationsCloseRequested
+    signal clearAllNotificationsRequested
+    signal clearNotificationRequested(var id)
+    signal toggleDoNotDisturbRequested
 
     transformOrigin: Item.Top
 
@@ -369,7 +381,7 @@ Item {
             z: 10
             anchors.fill: parent
             // Padding relaxes to zero as a panel takes over — panels bring their own.
-            anchors.margins: root.expanded ? (root.mode === "media" ? 10 : 12) * (1 - root.wifiMorph) * (1 - root.btMorph) * (1 - root.batteryMorph) * (1 - root.settingsMorph) * (1 - root.appsMorph) * (1 - root.volumeMorph) : 0
+            anchors.margins: root.expanded ? (root.mode === "media" ? 10 : 12) * (1 - root.wifiMorph) * (1 - root.btMorph) * (1 - root.batteryMorph) * (1 - root.settingsMorph) * (1 - root.appsMorph) * (1 - root.volumeMorph) * (1 - root.notificationsMorph) : 0
             wifiMorph: root.wifiMorph
             wifiMaxPanelHeight: root.wifiMaxPanelHeight
             btMorph: root.btMorph
@@ -378,6 +390,11 @@ Item {
             settingsMorph: root.settingsMorph
             appsMorph: root.appsMorph
             appsMaxPanelHeight: root.appsMaxPanelHeight
+            notificationsMorph: root.notificationsMorph
+            notificationsMaxPanelHeight: root.notificationsMaxPanelHeight
+            notifyIcon: root.notifyIcon
+            notifications: root.notifications
+            doNotDisturb: root.doNotDisturb
             volumeMorph: root.volumeMorph
             volumeKind: root.volumeKind
             mode: root.mode
@@ -498,13 +515,18 @@ Item {
             onBtSettingsRequested: root.btSettingsRequested()
             onSeekRequested: position => root.seekRequested(position)
             onHandleStyleRequested: style => root.handleStyleRequested(style)
+            onNotificationsSettingsRequested: root.notificationsSettingsRequested()
+            onNotificationsCloseRequested: root.notificationsCloseRequested()
+            onClearAllNotificationsRequested: root.clearAllNotificationsRequested()
+            onClearNotificationRequested: id => root.clearNotificationRequested(id)
+            onToggleDoNotDisturbRequested: root.toggleDoNotDisturbRequested()
         }
     }
 
     // Height is a plain binding, not part of the state, so it can re-target while
     // the morph is still running — the network list usually lands mid-transition,
     // and the app picker drawer opens long after the morph has settled.
-    height: root.mode === "wifi" ? Math.max(root.targetH, root.wifiPanelHeight) : (root.mode === "bluetooth" ? Math.max(root.targetH, root.btPanelHeight) : (root.mode === "battery" ? Math.max(root.targetH, root.batteryPanelHeight) : (root.mode === "settings" ? Math.max(root.targetH, root.settingsPanelHeight) : (root.mode === "apps" ? Math.max(root.targetH, root.appsPanelHeight) : root.targetH))))
+    height: root.mode === "wifi" ? Math.max(root.targetH, root.wifiPanelHeight) : (root.mode === "bluetooth" ? Math.max(root.targetH, root.btPanelHeight) : (root.mode === "battery" ? Math.max(root.targetH, root.batteryPanelHeight) : (root.mode === "settings" ? Math.max(root.targetH, root.settingsPanelHeight) : (root.mode === "apps" ? Math.max(root.targetH, root.appsPanelHeight) : (root.mode === "notifications" ? Math.max(root.targetH, root.notificationsPanelHeight) : root.targetH)))))
 
     state: root.mode !== "idle" ? root.mode : (root.forceExpanded ? "peek" : "collapsed")
 
@@ -520,6 +542,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -533,6 +556,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -546,6 +570,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -559,6 +584,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -572,6 +598,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 1
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -585,6 +612,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -598,6 +626,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -611,6 +640,7 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -624,6 +654,7 @@ Item {
                 root.settingsMorph: 1
                 root.appsMorph: 0
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
             }
         },
         State {
@@ -637,6 +668,21 @@ Item {
                 root.settingsMorph: 0
                 root.appsMorph: 1
                 root.volumeMorph: 0
+                root.notificationsMorph: 0
+            }
+        },
+        State {
+            name: "notifications"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.settingsMorph: 0
+                root.appsMorph: 0
+                root.volumeMorph: 0
+                root.notificationsMorph: 1
             }
         }
     ]
@@ -823,6 +869,41 @@ Item {
                 }
             }
         },
+        Transition {
+            to: "notifications"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 340
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.7
+                }
+
+                NumberAnimation {
+                    property: "notificationsMorph"
+                    duration: 440
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            from: "notifications"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 300
+                    easing.type: Easing.InOutCubic
+                }
+
+                NumberAnimation {
+                    property: "notificationsMorph"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
         // Volume HUD: the handle springs out sideways and the bar is already
         // there by the time the width settles, so the pill reads as one gesture
         // rather than a shape that fills in afterwards.
@@ -869,7 +950,7 @@ Item {
             }
 
             NumberAnimation {
-                properties: "wifiMorph,btMorph,batteryMorph,settingsMorph,appsMorph,volumeMorph"
+                properties: "wifiMorph,btMorph,batteryMorph,settingsMorph,appsMorph,volumeMorph,notificationsMorph"
                 duration: 200
                 easing.type: Easing.OutCubic
             }
