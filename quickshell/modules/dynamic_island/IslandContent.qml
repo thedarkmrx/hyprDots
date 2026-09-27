@@ -31,6 +31,9 @@ Item {
     property bool liquidGlassEnabled: false
     property int idleWidth: 340
     property int idleHeight: 132
+    // The actual PanelWindow the island is drawn in — needed so the tray
+    // row's right-click menus position themselves correctly.
+    property var trayParentWindow: null
     property string batteryHoverText: ""
     property bool batteryCharging: false
     property int batteryLevel: 0
@@ -548,6 +551,24 @@ Item {
                             onClicked: root.appsSettingsRequested()
                         }
                     }
+                }
+            }
+
+            // System tray, docked along the bottom of the box. Collapses to
+            // nothing (SystemTrayRow itself sizes to zero) when no app has a
+            // tray icon registered, so it never leaves an empty gap.
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: idleSystemTray.height
+                Layout.topMargin: idleSystemTray.height > 0 ? 4 : 0
+
+                SystemTrayRow {
+                    id: idleSystemTray
+
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    parentWindow: root.trayParentWindow
+                    chipSize: 20
+                    iconSize: 12
                 }
             }
         }
