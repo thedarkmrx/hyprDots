@@ -746,6 +746,44 @@ Item {
                 }
             }
 
+            // Wired connection status, docked right above the network list.
+            // Takes zero space and shows nothing at all while there's no
+            // cable plugged in — this isn't meant to compete with WiFi, just
+            // to flag when you're already online over ethernet.
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: root.ethConnected ? 30 : 0
+                visible: root.ethConnected
+                radius: 10
+                color: "#090909"
+                border.width: 1
+                border.color: "#232323"
+                clip: true
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    spacing: 8
+
+                    MIcon {
+                        name: "settings_ethernet"
+                        size: 13
+                        color: root.primaryText
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.ethConnectionName !== "" ? "Wired connection — " + root.ethConnectionName : "Wired connection"
+                        color: "#c8c8c8"
+                        elide: Text.ElideRight
+                        font.family: root.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.DemiBold
+                    }
+                }
+            }
+
             Flickable {
                 id: wifiListFlick
 
