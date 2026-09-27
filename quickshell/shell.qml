@@ -10,7 +10,7 @@ import "modules/dynamic_island"
 ShellRoot {
     id: root
 
-    DynamicGlacier {
+    DynamicIsland {
     }
 
 }
