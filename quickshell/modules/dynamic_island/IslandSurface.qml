@@ -45,6 +45,9 @@ Item {
     property string timeText: ""
     property string dateText: ""
     property string fontFamily: "Noto Sans"
+    // The actual PanelWindow the island is drawn in — needed so the tray row
+    // inside the box can position its right-click menus correctly.
+    property var trayParentWindow: null
 
     // Geometry the shell asks for. The surface owns the actual width/height so the
     // morph between shapes can be expressed as States + Transitions.
@@ -380,6 +383,7 @@ Item {
             liquidGlassEnabled: root.liquidGlassEnabled
             idleWidth: root.idleWidth
             idleHeight: root.idleHeight
+            trayParentWindow: root.trayParentWindow
             forceExpanded: root.forceExpanded
             appName: root.appName
             title: root.title
