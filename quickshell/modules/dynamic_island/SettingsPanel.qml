@@ -149,7 +149,7 @@ Item {
 
                 Text {
                     Layout.fillWidth: true
-                    text: "Glacier settings"
+                    text: "Island settings"
                     color: root.primaryText
                     elide: Text.ElideRight
                     font.family: root.fontFamily
